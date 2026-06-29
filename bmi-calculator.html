@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BMI Calculator – HealthMetric Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ===== RESET & BASE ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0e0e;
+    --surface: rgba(255,255,255,0.04);
+    --surface-hover: rgba(255,255,255,0.07);
+    --border: rgba(255,255,255,0.08);
+    --border-focus: rgba(99,179,237,0.6);
+    --text: #f0f0f0;
+    --muted: #888;
+    --accent: #63b3ed;
+    --accent2: #9f7aea;
+    --underweight: #4299e1;
+    --normal: #48bb78;
+    --overweight: #ed8936;
+    --obese: #fc4f4f;
+    --radius: 20px;
+    --radius-sm: 12px;
+    --shadow: 0 24px 64px rgba(0,0,0,0.5);
+    --transition: 0.3s cubic-bezier(.4,0,.2,1);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 16px 64px;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 20% 0%, rgba(99,179,237,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 10%, rgba(159,122,234,0.06) 0%, transparent 55%);
+  }
+
+  /* ===== HEADER ===== */
+  header {
+    text-align: center;
+    margin-bottom: 36px;
+    animation: fadeDown 0.6s ease both;
+  }
+  header .logo {
+    font-size: 13px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+  header h1 {
+    font-size: clamp(26px, 5vw, 38px);
+    font-weight: 800;
+    background: linear-gradient(135deg, #fff 0%, #63b3ed 60%, #9f7aea 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.2;
+  }
+  header p {
+    color: var(--muted);
+    font-size: 14px;
+    margin-top: 8px;
+  }
+
+  /* ===== MAIN CARD ===== */
+  .card {
+    width: 100%;
+    max-width: 520px;
+    background: rgba(255,255,255,0.035);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.06);
+    padding: 32px 28px;
+    animation: fadeUp 0.7s ease 0.1s both;
+    transition: box-shadow var(--transition), transform var(--transition);
+  }
+  .card:hover { box-shadow: var(--shadow), 0 0 0 1px rgba(99,179,237,0.12), inset 0 1px 0 rgba(255,255,255,0.06); }
+
+  /* ===== SECTION LABEL ===== */
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 18px;
+  }
+
+  /* ===== GENDER TOGGLE ===== */
+  .gender-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+  .gender-btn {
+    flex: 1;
+    padding: 13px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+  .gender-btn:hover { background: var(--surface-hover); color: var(--text); }
+  .gender-btn.active {
+    background: linear-gradient(135deg, rgba(99,179,237,0.2), rgba(159,122,234,0.15));
+    border-color: rgba(99,179,237,0.5);
+    color: var(--accent);
+    box-shadow: 0 0 20px rgba(99,179,237,0.12);
+  }
+  .gender-btn svg { width: 18px; height: 18px; }
+
+  /* ===== INPUT GRID ===== */
+  .input-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .input-group { display: flex; flex-direction: column; gap: 8px; }
+  .input-group.full { grid-column: 1/-1; }
+  .input-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+  }
+  .input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    transition: border-color var(--transition), box-shadow var(--transition);
+  }
+  .input-wrap:focus-within {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px rgba(99,179,237,0.12);
+  }
+  .input-wrap input {
+    flex: 1;
+    padding: 13px 14px;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    width: 100%;
+  }
+  .input-wrap input::placeholder { color: rgba(255,255,255,0.2); font-weight: 400; }
+  .unit-switch {
+    display: flex;
+    border-left: 1px solid var(--border);
+  }
+  .unit-btn {
+    padding: 8px 10px;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .unit-btn.active { background: rgba(99,179,237,0.15); color: var(--accent); }
+
+  /* ===== ERROR MSG ===== */
+  .err-msg {
+    font-size: 11.5px;
+    color: #fc4f4f;
+    min-height: 16px;
+    margin-top: 2px;
+    display: none;
+  }
+  .err-msg.show { display: block; animation: shake 0.3s ease; }
+
+  /* ===== BUTTONS ===== */
+  .btn-row { display: flex; gap: 12px; margin-top: 24px; }
+  .btn {
+    flex: 1;
+    padding: 15px;
+    border-radius: var(--radius-sm);
+    border: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all var(--transition);
+    letter-spacing: 0.3px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #63b3ed, #9f7aea);
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(99,179,237,0.3);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(99,179,237,0.4); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { background: var(--surface-hover); color: var(--text); }
+
+  /* Ripple */
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    transform: scale(0);
+    animation: ripple 0.5s linear;
+    pointer-events: none;
+  }
+  @keyframes ripple { to { transform: scale(4); opacity: 0; } }
+
+  /* ===== LOADING ===== */
+  #loading {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 28px 0;
+    animation: fadeIn 0.3s ease;
+  }
+  #loading.show { display: flex; }
+  .spinner {
+    width: 44px; height: 44px;
+    border: 3px solid rgba(99,179,237,0.15);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  .loading-text { color: var(--muted); font-size: 14px; }
+
+  /* ===== RESULT SECTION ===== */
+  #result {
+    display: none;
+    animation: fadeUp 0.5s ease both;
+    margin-top: 28px;
+  }
+  #result.show { display: block; }
+
+  /* ===== GAUGE ===== */
+  .gauge-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 28px;
+  }
+  .gauge-svg-wrap { position: relative; width: 280px; height: 155px; }
+  .gauge-svg-wrap svg { width: 100%; height: 100%; }
+  .gauge-needle-wrap {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform-origin: bottom center;
+    transform: translateX(-50%) rotate(-90deg);
+    transition: transform 1s cubic-bezier(.34,1.56,.64,1);
+    width: 4px;
+    height: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .gauge-needle {
+    flex: 1;
+    width: 3px;
+    background: linear-gradient(to top, #fff, rgba(255,255,255,0.3));
+    border-radius: 2px 2px 0 0;
+  }
+  .gauge-center-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 12px rgba(255,255,255,0.6);
+    flex-shrink: 0;
+  }
+
+  .bmi-display {
+    text-align: center;
+    margin-top: -8px;
+  }
+  .bmi-val {
+    font-size: 52px;
+    font-weight: 800;
+    line-height: 1;
+    transition: color 0.5s;
+  }
+  .bmi-label { font-size: 11px; font-weight: 600; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+  .bmi-cat {
+    display: inline-block;
+    padding: 5px 18px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 8px;
+    transition: all 0.5s;
+  }
+
+  /* ===== INFO CARDS ROW ===== */
+  .info-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .info-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    text-align: center;
+  }
+  .info-card .ic-label { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+  .info-card .ic-val { font-size: 20px; font-weight: 700; color: var(--text); }
+  .info-card .ic-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  /* ===== SUGGESTION CARD ===== */
+  .suggestion-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 20px;
+    margin-bottom: 16px;
+    transition: border-color 0.5s;
+  }
+  .suggestion-card .sc-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .suggestion-card ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .suggestion-card li {
+    font-size: 14px;
+    color: #ccc;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    line-height: 1.5;
+  }
+  .suggestion-card li .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-top: 7px;
+    flex-shrink: 0;
+    transition: background 0.5s;
+  }
+
+  /* ===== BMI TABLE ===== */
+  .bmi-table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .bmi-table-title {
+    padding: 14px 18px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 11px 18px; text-align: left; font-size: 13px; }
+  th { color: var(--muted); font-weight: 600; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+  td { border-bottom: 1px solid rgba(255,255,255,0.03); font-weight: 500; }
+  tr:last-child td { border-bottom: none; }
+  .tr-active { background: rgba(99,179,237,0.07); }
+  .tr-active td:first-child { font-weight: 700; }
+  .cat-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+
+  /* ===== FORMULA CARD ===== */
+  .formula-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px 18px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .formula-card .f-icon { font-size: 18px; }
+  .formula-card .f-text strong { display: block; color: var(--text); font-size: 15px; font-weight: 700; margin-bottom: 2px; font-family: 'Courier New', monospace; }
+
+  /* ===== ADMIN PANEL ===== */
+  .admin-trigger {
+    text-align: center;
+    margin-top: 36px;
+    cursor: pointer;
+  }
+  .admin-trigger span {
+    font-size: 11px;
+    color: rgba(255,255,255,0.1);
+    letter-spacing: 1px;
+    user-select: none;
+    transition: color 0.3s;
+  }
+  .admin-trigger:hover span { color: rgba(255,255,255,0.25); }
+
+  #admin-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.3s ease;
+  }
+  #admin-modal.show { display: flex; }
+  .admin-box {
+    background: #161616;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: var(--radius);
+    padding: 32px 28px;
+    width: 100%;
+    max-width: 440px;
+    animation: fadeUp 0.35s ease;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.7);
+  }
+  .admin-box h2 { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
+  .admin-box p { color: var(--muted); font-size: 13px; margin-bottom: 22px; }
+  .admin-input-wrap {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .admin-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 13px 16px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color var(--transition);
+  }
+  .admin-input:focus { border-color: var(--border-focus); }
+  .admin-submit {
+    padding: 13px 20px;
+    background: linear-gradient(135deg, #63b3ed, #9f7aea);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .admin-submit:hover { opacity: 0.85; }
+  .admin-error { color: #fc4f4f; font-size: 12px; min-height: 18px; margin-bottom: 4px; }
+  .admin-close-row { display: flex; justify-content: flex-end; margin-top: 14px; }
+  .admin-close {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    padding: 8px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .admin-close:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+
+  /* Records Table */
+  #records-section { display: none; margin-top: 22px; }
+  #records-section.show { display: block; }
+  .records-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .records-header span { font-size: 13px; font-weight: 700; }
+  .btn-delete-all {
+    background: rgba(252,79,79,0.15);
+    border: 1px solid rgba(252,79,79,0.3);
+    color: #fc4f4f;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 7px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-delete-all:hover { background: rgba(252,79,79,0.25); }
+  .rec-table-wrap { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; max-height: 260px; overflow-y: auto; }
+  .rec-table-wrap table { width: 100%; }
+  .rec-table-wrap th, .rec-table-wrap td { padding: 9px 12px; font-size: 12px; }
+  .no-records { text-align: center; color: var(--muted); padding: 24px; font-size: 13px; }
+
+  /* ===== ANIMATIONS ===== */
+  @keyframes fadeDown { from { opacity:0; transform:translateY(-16px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes fadeUp   { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes fadeIn   { from { opacity:0; } to { opacity:1; } }
+  @keyframes spin     { to { transform:rotate(360deg); } }
+  @keyframes shake {
+    0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 40%{transform:translateX(5px)}
+    60%{transform:translateX(-3px)} 80%{transform:translateX(3px)}
+  }
+  @keyframes counterUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 380px) {
+    .card { padding: 22px 16px; }
+    .input-grid { grid-template-columns: 1fr; }
+    .input-group.full { grid-column: 1; }
+    .info-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">HealthMetric Pro</div>
+  <h1>BMI Calculator</h1>
+  <p>Know your body, fuel your health journey</p>
+</header>
+
+<div class="card">
+  <!-- GENDER -->
+  <div class="section-label">Gender</div>
+  <div class="gender-row">
+    <button class="gender-btn active" id="gBtn-female" onclick="setGender('female')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M12 12v8M9 17h6"/></svg>
+      Female
+    </button>
+    <button class="gender-btn" id="gBtn-male" onclick="setGender('male')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="14" r="4"/><path d="M20 4l-6 6M14 4h6v6"/></svg>
+      Male
+    </button>
+  </div>
+
+  <!-- INPUTS -->
+  <div class="section-label">Your Measurements</div>
+
+  <!-- NAME FIELD -->
+  <div class="input-group" style="margin-bottom:14px;">
+    <label>Full Name</label>
+    <div class="input-wrap">
+      <input type="text" id="userName" placeholder="Enter your name…" style="font-size:15px;font-weight:500;">
+    </div>
+    <span class="err-msg" id="nameErr">Please enter your name</span>
+  </div>
+
+  <div class="input-grid">
+    <!-- Age -->
+    <div class="input-group">
+      <label>Age (years)</label>
+      <div class="input-wrap">
+        <input type="number" id="age" placeholder="25" min="5" max="120">
+      </div>
+      <span class="err-msg" id="ageErr">Age must be 5–120</span>
+    </div>
+
+    <!-- Height -->
+    <div class="input-group">
+      <label>Height</label>
+      <div class="input-wrap">
+        <input type="number" id="height" placeholder="170" min="1">
+        <div class="unit-switch">
+          <button class="unit-btn active" id="hUnit-cm"  onclick="setHUnit('cm')">cm</button>
+          <button class="unit-btn"        id="hUnit-ft"  onclick="setHUnit('ft')">ft</button>
+        </div>
+      </div>
+      <span class="err-msg" id="heightErr">Height must be 80–250 cm</span>
+    </div>
+
+    <!-- Height Inches (shown when ft selected) -->
+    <div class="input-group" id="inchGroup" style="display:none">
+      <label>Inches</label>
+      <div class="input-wrap">
+        <input type="number" id="inches" placeholder="0" min="0" max="11">
+      </div>
+    </div>
+
+    <!-- Weight -->
+    <div class="input-group">
+      <label>Weight</label>
+      <div class="input-wrap">
+        <input type="number" id="weight" placeholder="70" min="1">
+        <div class="unit-switch">
+          <button class="unit-btn active" id="wUnit-kg" onclick="setWUnit('kg')">kg</button>
+          <button class="unit-btn"        id="wUnit-lb" onclick="setWUnit('lb')">lbs</button>
+        </div>
+      </div>
+      <span class="err-msg" id="weightErr">Weight must be 10–300 kg</span>
+    </div>
+  </div>
+
+  <!-- BUTTONS -->
+  <div class="btn-row">
+    <button class="btn btn-primary" id="calcBtn" onclick="calculate()">Calculate BMI</button>
+    <button class="btn btn-secondary" onclick="reset()">Reset</button>
+  </div>
+
+  <!-- LOADING -->
+  <div id="loading">
+    <div class="spinner"></div>
+    <span class="loading-text">Calculating your health profile…</span>
+  </div>
+
+  <!-- RESULT -->
+  <div id="result">
+
+    <!-- GAUGE -->
+    <div class="gauge-wrap">
+      <div class="gauge-svg-wrap">
+        <svg viewBox="0 0 280 155" xmlns="http://www.w3.org/2000/svg">
+          <!-- Background arc -->
+          <path d="M 20 145 A 120 120 0 0 1 260 145" fill="none" stroke="#222" stroke-width="28" stroke-linecap="round"/>
+          <!-- Underweight - blue -->
+          <path id="arc-uw" d="M 20 145 A 120 120 0 0 1 260 145" fill="none" stroke="#4299e1" stroke-width="26"
+            stroke-dasharray="0 377" stroke-linecap="round"/>
+          <!-- Normal - green -->
+          <path id="arc-no" d="M 20 145 A 120 120 0 0 1 260 145" fill="none" stroke="#48bb78" stroke-width="26"
+            stroke-dasharray="0 377" stroke-linecap="round"/>
+          <!-- Overweight - orange -->
+          <path id="arc-ov" d="M 20 145 A 120 120 0 0 1 260 145" fill="none" stroke="#ed8936" stroke-width="26"
+            stroke-dasharray="0 377" stroke-linecap="round"/>
+          <!-- Obese - red -->
+          <path id="arc-ob" d="M 20 145 A 120 120 0 0 1 260 145" fill="none" stroke="#fc4f4f" stroke-width="26"
+            stroke-dasharray="0 377" stroke-linecap="round"/>
+          <!-- Labels -->
+          <text x="28" y="135" fill="#4299e1" font-size="9" font-family="Inter,sans-serif" font-weight="700">Under</text>
+          <text x="88" y="42"  fill="#48bb78" font-size="9" font-family="Inter,sans-serif" font-weight="700">Normal</text>
+          <text x="175" y="42" fill="#ed8936" font-size="9" font-family="Inter,sans-serif" font-weight="700">Over</text>
+          <text x="232" y="135" fill="#fc4f4f" font-size="9" font-family="Inter,sans-serif" font-weight="700">Obese</text>
+          <!-- Scale ticks -->
+          <text x="63"  y="160" fill="#555" font-size="8.5" font-family="Inter,sans-serif" text-anchor="middle">18.5</text>
+          <text x="140" y="155" fill="#555" font-size="8.5" font-family="Inter,sans-serif" text-anchor="middle">25</text>
+          <text x="216" y="160" fill="#555" font-size="8.5" font-family="Inter,sans-serif" text-anchor="middle">30</text>
+        </svg>
+        <div class="gauge-needle-wrap" id="needle">
+          <div class="gauge-needle"></div>
+          <div class="gauge-center-dot"></div>
+        </div>
+      </div>
+
+      <div class="bmi-display">
+        <div class="bmi-label">BMI Score</div>
+        <div class="bmi-val" id="bmiVal">0.0</div>
+        <div class="bmi-cat" id="bmiCat">—</div>
+      </div>
+    </div>
+
+    <!-- FORMULA -->
+    <div class="formula-card">
+      <span class="f-icon">📐</span>
+      <div class="f-text">
+        <strong>BMI = Weight (kg) ÷ Height² (m)</strong>
+        <span id="formulaDetail">—</span>
+      </div>
+    </div>
+
+    <!-- INFO CARDS -->
+    <div class="info-row">
+      <div class="info-card">
+        <div class="ic-label">Ideal Weight</div>
+        <div class="ic-val" id="idealWeight">—</div>
+        <div class="ic-sub">Healthy range</div>
+      </div>
+      <div class="info-card">
+        <div class="ic-label">Your Profile</div>
+        <div class="ic-val" id="profileSummary">—</div>
+        <div class="ic-sub" id="profileSub">—</div>
+      </div>
+    </div>
+
+    <!-- SUGGESTIONS -->
+    <div class="suggestion-card" id="suggestionCard">
+      <div class="sc-title">
+        <span id="suggIcon">💡</span>
+        <span id="suggTitle">Health Tips</span>
+      </div>
+      <ul id="suggList"></ul>
+    </div>
+
+    <!-- BMI TABLE -->
+    <div class="bmi-table-wrap">
+      <div class="bmi-table-title">BMI Classification</div>
+      <table>
+        <thead><tr><th>BMI Range</th><th>Status</th></tr></thead>
+        <tbody id="bmiTableBody">
+          <tr id="tr-uw"><td><span class="cat-dot" style="background:#4299e1"></span>&lt; 18.5</td><td style="color:#4299e1">Underweight</td></tr>
+          <tr id="tr-no"><td><span class="cat-dot" style="background:#48bb78"></span>18.5 – 24.9</td><td style="color:#48bb78">Normal</td></tr>
+          <tr id="tr-ov"><td><span class="cat-dot" style="background:#ed8936"></span>25 – 29.9</td><td style="color:#ed8936">Overweight</td></tr>
+          <tr id="tr-ob"><td><span class="cat-dot" style="background:#fc4f4f"></span>≥ 30</td><td style="color:#fc4f4f">Obese</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div><!-- /result -->
+</div><!-- /card -->
+
+<!-- ADMIN TRIGGER (hidden, triple-click) -->
+<div class="admin-trigger" id="adminTrigger">
+  <span>· · ·</span>
+</div>
+
+<!-- ADMIN MODAL -->
+<div id="admin-modal">
+  <div class="admin-box">
+    <h2>🔐 Admin Panel</h2>
+    <p>Enter the admin password to access saved records.</p>
+    <div class="admin-input-wrap">
+      <input type="password" class="admin-input" id="adminPwd" placeholder="Enter password…" onkeydown="if(event.key==='Enter')adminLogin()">
+      <button class="admin-submit" onclick="adminLogin()">Enter</button>
+    </div>
+    <div class="admin-error" id="adminErr"></div>
+    <div id="records-section">
+      <div class="records-header">
+        <span>Saved Records (<span id="recCount">0</span>)</span>
+        <button class="btn-delete-all" onclick="deleteAllRecords()">🗑 Delete All</button>
+      </div>
+      <div class="rec-table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Name</th><th>Date</th><th>Age</th><th>G</th><th>BMI</th><th>Status</th><th>Del</th></tr></thead>
+          <tbody id="recTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="admin-close-row">
+      <button class="admin-close" onclick="closeAdmin()">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== STATE ===== */
+let gender = 'female';
+let hUnit = 'cm';
+let wUnit = 'kg';
+let adminClickCount = 0;
+let adminClickTimer = null;
+const ADMIN_PASS = 'asdf1234';
+let records = JSON.parse(localStorage.getItem('bmi_records') || '[]');
+
+/* ===== GAUGE ARC SETUP ===== */
+// Semi-circle arc circumference: π * r = π * 120 ≈ 377
+const ARC = 377;
+
+// BMI segments: 10→18.5 (UW), 18.5→25 (N), 25→30 (OW), 30→40 (O), cap at 40
+function bmiToDash(bmi) {
+  const MIN = 10, MAX = 40, RANGE = MAX - MIN;
+  const pct = Math.min(Math.max((bmi - MIN) / RANGE, 0), 1);
+  return pct * ARC;
+}
+// segment boundaries
+function segDash(fromBMI, toBMI) {
+  return [(bmiToDash(fromBMI)).toFixed(1), (ARC - bmiToDash(fromBMI)).toFixed(1),
+          (bmiToDash(toBMI)).toFixed(1),   (ARC - bmiToDash(toBMI)).toFixed(1)];
+}
+
+function initGauge() {
+  // Underweight: 10 → 18.5
+  setArcSegment('arc-uw', 10, 18.5);
+  // Normal: 18.5 → 25
+  setArcSegment('arc-no', 18.5, 25);
+  // Overweight: 25 → 30
+  setArcSegment('arc-ov', 25, 30);
+  // Obese: 30 → 40
+  setArcSegment('arc-ob', 30, 40);
+}
+function setArcSegment(id, from, to) {
+  const el = document.getElementById(id);
+  const MIN = 10, MAX = 40, RANGE = MAX - MIN;
+  const f = ((from - MIN) / RANGE) * ARC;
+  const t = ((to   - MIN) / RANGE) * ARC;
+  const len = t - f;
+  el.style.strokeDasharray = `${len} ${ARC}`;
+  el.style.strokeDashoffset = -f;
+}
+
+/* ===== GENDER ===== */
+function setGender(g) {
+  gender = g;
+  document.getElementById('gBtn-female').classList.toggle('active', g === 'female');
+  document.getElementById('gBtn-male').classList.toggle('active',   g === 'male');
+}
+
+/* ===== UNIT SWITCHES ===== */
+function setHUnit(u) {
+  hUnit = u;
+  document.getElementById('hUnit-cm').classList.toggle('active', u === 'cm');
+  document.getElementById('hUnit-ft').classList.toggle('active', u === 'ft');
+  document.getElementById('inchGroup').style.display = u === 'ft' ? 'flex' : 'none';
+  document.getElementById('height').placeholder = u === 'cm' ? '170' : '5';
+  document.getElementById('heightErr').textContent = u === 'cm' ? 'Height must be 80–250 cm' : 'Height must be 2–8 ft';
+}
+function setWUnit(u) {
+  wUnit = u;
+  document.getElementById('wUnit-kg').classList.toggle('active', u === 'kg');
+  document.getElementById('wUnit-lb').classList.toggle('active', u === 'lb');
+  document.getElementById('weight').placeholder = u === 'kg' ? '70' : '154';
+  document.getElementById('weightErr').textContent = u === 'kg' ? 'Weight must be 10–300 kg' : 'Weight must be 22–660 lbs';
+}
+
+/* ===== VALIDATION ===== */
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg || el.textContent;
+  el.classList.add('show');
+}
+function clearErr(id) { document.getElementById(id).classList.remove('show'); }
+function clearAllErr() { ['nameErr','ageErr','heightErr','weightErr'].forEach(clearErr); }
+
+function validate() {
+  let ok = true;
+  const name = document.getElementById('userName').value.trim();
+  if (!name) { showErr('nameErr'); ok = false; } else clearErr('nameErr');
+
+  const age = parseFloat(document.getElementById('age').value);
+  if (!age || age < 5 || age > 120) { showErr('ageErr'); ok = false; } else clearErr('ageErr');
+
+  let heightCm;
+  if (hUnit === 'cm') {
+    heightCm = parseFloat(document.getElementById('height').value);
+    if (!heightCm || heightCm < 80 || heightCm > 250) { showErr('heightErr'); ok = false; } else clearErr('heightErr');
+  } else {
+    const ft = parseFloat(document.getElementById('height').value) || 0;
+    const inch = parseFloat(document.getElementById('inches').value) || 0;
+    if (ft < 2 || ft > 8) { showErr('heightErr', 'Height must be 2–8 ft'); ok = false; } else clearErr('heightErr');
+    heightCm = ft * 30.48 + inch * 2.54;
+  }
+
+  let weightKg = parseFloat(document.getElementById('weight').value);
+  if (wUnit === 'lb') weightKg = weightKg / 2.205;
+  const rawW = parseFloat(document.getElementById('weight').value);
+  const minW = wUnit === 'kg' ? 10 : 22;
+  const maxW = wUnit === 'kg' ? 300 : 660;
+  if (!rawW || rawW < minW || rawW > maxW) { showErr('weightErr'); ok = false; } else clearErr('weightErr');
+
+  return ok ? { age, heightCm, weightKg } : null;
+}
+
+/* ===== CALCULATE ===== */
+function calculate() {
+  const vals = validate();
+  if (!vals) return;
+  const { age, heightCm, weightKg } = vals;
+
+  // Show loading
+  document.getElementById('result').classList.remove('show');
+  const loading = document.getElementById('loading');
+  loading.classList.add('show');
+
+  setTimeout(() => {
+    loading.classList.remove('show');
+    const bmi = weightKg / ((heightCm / 100) ** 2);
+    renderResult(bmi, heightCm, weightKg, age);
+    // Save record
+    saveRecord(age, bmi);
+  }, 1000);
+
+  // Ripple
+  addRipple(document.getElementById('calcBtn'), event);
+}
+
+function renderResult(bmi, heightCm, weightKg, age) {
+  const bmiR = Math.round(bmi * 10) / 10;
+
+  // Category
+  let cat, color, catId, icon;
+  if      (bmi < 18.5) { cat='Underweight'; color='#4299e1'; catId='uw'; icon='🥗'; }
+  else if (bmi < 25)   { cat='Normal';      color='#48bb78'; catId='no'; icon='✅'; }
+  else if (bmi < 30)   { cat='Overweight';  color='#ed8936'; catId='ov'; icon='⚠️'; }
+  else                  { cat='Obese';       color='#fc4f4f'; catId='ob'; icon='🏥'; }
+
+  // BMI value animated counter
+  const valEl = document.getElementById('bmiVal');
+  animateNumber(valEl, 0, bmiR, 900, 1);
+  valEl.style.color = color;
+
+  // Category badge
+  const catEl = document.getElementById('bmiCat');
+  catEl.textContent = cat.toUpperCase();
+  catEl.style.background = color + '22';
+  catEl.style.color = color;
+  catEl.style.border = `1px solid ${color}44`;
+
+  // Needle
+  const MIN=10, MAX=40;
+  const pct = Math.min(Math.max((bmi - MIN) / (MAX - MIN), 0), 1);
+  const angle = -90 + pct * 180; // -90 (left) to +90 (right)
+  document.getElementById('needle').style.transform = `translateX(-50%) rotate(${angle}deg)`;
+
+  // Highlight table row
+  ['tr-uw','tr-no','tr-ov','tr-ob'].forEach(id => document.getElementById(id).classList.remove('tr-active'));
+  document.getElementById(`tr-${catId}`).classList.add('tr-active');
+
+  // Formula
+  document.getElementById('formulaDetail').textContent =
+    `${weightKg.toFixed(1)} ÷ (${(heightCm/100).toFixed(2)})² = ${bmiR}`;
+
+  // Ideal weight (18.5–24.9 for height)
+  const hM = heightCm / 100;
+  const idealMin = Math.round(18.5 * hM * hM);
+  const idealMax = Math.round(24.9 * hM * hM);
+  document.getElementById('idealWeight').textContent = `${idealMin}–${idealMax} kg`;
+
+  // Profile
+  const userName = document.getElementById('userName').value.trim() || 'User';
+  document.getElementById('profileSummary').textContent = gender === 'female' ? '♀ Female' : '♂ Male';
+  document.getElementById('profileSub').textContent = `${userName} · Age ${age} · ${heightCm.toFixed(0)}cm`;
+
+  // Suggestions
+  const tips = {
+    uw: ['Eat more healthy, calorie-dense foods', 'Increase protein intake daily', 'Include strength training 3×/week', 'Stay well hydrated throughout the day'],
+    no: ['Maintain your current balanced diet', 'Exercise at least 30 minutes daily', 'Stay hydrated with 8+ glasses of water', 'Prioritize quality sleep each night'],
+    ov: ['Reduce sugary and ultra-processed foods', 'Walk 30–45 minutes every day', 'Fill half your plate with vegetables', 'Track and control daily calorie intake'],
+    ob: ['Consult a doctor for a personalized plan', 'Follow a structured healthy meal plan', 'Start with low-impact daily exercise', 'Set small, sustainable weight-loss goals'],
+  };
+  const suggIcons = { uw:'🥗', no:'✅', ov:'⚠️', ob:'🏥' };
+  const suggTitles = { uw:'Nutrition & Fitness Advice', no:'Keep Up the Good Work!', ov:'Time to Make a Change', ob:'Health Action Plan' };
+  document.getElementById('suggIcon').textContent = suggIcons[catId];
+  document.getElementById('suggTitle').textContent = suggTitles[catId];
+  const suggList = document.getElementById('suggList');
+  suggList.innerHTML = tips[catId].map(t => `<li><span class="dot" style="background:${color}"></span>${t}</li>`).join('');
+  document.getElementById('suggestionCard').style.borderColor = color + '33';
+
+  // Show result
+  document.getElementById('result').classList.add('show');
+}
+
+function animateNumber(el, from, to, dur, dec) {
+  const start = performance.now();
+  function step(now) {
+    const p = Math.min((now - start) / dur, 1);
+    const ease = 1 - Math.pow(1 - p, 3);
+    el.textContent = (from + (to - from) * ease).toFixed(dec);
+    if (p < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+/* ===== RESET ===== */
+function reset() {
+  ['userName','age','height','weight','inches'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  clearAllErr();
+  document.getElementById('result').classList.remove('show');
+  document.getElementById('loading').classList.remove('show');
+  document.getElementById('needle').style.transform = 'translateX(-50%) rotate(-90deg)';
+  setGender('female');
+  setHUnit('cm');
+  setWUnit('kg');
+}
+
+/* ===== RIPPLE ===== */
+function addRipple(btn, e) {
+  if (!e) return;
+  const r = document.createElement('span');
+  r.className = 'ripple';
+  const rect = btn.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  r.style.cssText = `width:${size}px;height:${size}px;left:${(e.clientX||rect.left+rect.width/2)-rect.left-size/2}px;top:${(e.clientY||rect.top+rect.height/2)-rect.top-size/2}px`;
+  btn.appendChild(r);
+  r.addEventListener('animationend', () => r.remove());
+}
+document.querySelectorAll('.btn').forEach(b => b.addEventListener('click', e => addRipple(b, e)));
+
+/* ===== RECORDS ===== */
+function saveRecord(age, bmi) {
+  let cat;
+  if      (bmi < 18.5) cat = 'Underweight';
+  else if (bmi < 25)   cat = 'Normal';
+  else if (bmi < 30)   cat = 'Overweight';
+  else                  cat = 'Obese';
+  const name = document.getElementById('userName').value.trim() || 'User';
+  records.unshift({
+    date: new Date().toLocaleDateString(),
+    name, age, gender,
+    bmi: (Math.round(bmi*10)/10).toFixed(1),
+    cat
+  });
+  if (records.length > 50) records.pop();
+  localStorage.setItem('bmi_records', JSON.stringify(records));
+}
+
+/* ===== ADMIN ===== */
+document.getElementById('adminTrigger').addEventListener('click', () => {
+  adminClickCount++;
+  clearTimeout(adminClickTimer);
+  if (adminClickCount >= 3) {
+    adminClickCount = 0;
+    document.getElementById('admin-modal').classList.add('show');
+    document.getElementById('records-section').classList.remove('show');
+    document.getElementById('adminPwd').value = '';
+    document.getElementById('adminErr').textContent = '';
+  }
+  adminClickTimer = setTimeout(() => adminClickCount = 0, 1200);
+});
+
+function adminLogin() {
+  const pwd = document.getElementById('adminPwd').value;
+  if (pwd === ADMIN_PASS) {
+    document.getElementById('adminErr').textContent = '';
+    document.getElementById('records-section').classList.add('show');
+    renderRecords();
+  } else {
+    document.getElementById('adminErr').textContent = '❌ Incorrect password. Try again.';
+    document.getElementById('adminPwd').value = '';
+    document.getElementById('adminPwd').focus();
+  }
+}
+
+function renderRecords() {
+  const tbody = document.getElementById('recTableBody');
+  document.getElementById('recCount').textContent = records.length;
+  if (!records.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="no-records">No records saved yet.</td></tr>';
+    return;
+  }
+  const catColor = { Underweight:'#4299e1', Normal:'#48bb78', Overweight:'#ed8936', Obese:'#fc4f4f' };
+  tbody.innerHTML = records.map((r, i) =>
+    `<tr id="rec-row-${i}">
+      <td style="color:var(--muted)">${i+1}</td>
+      <td style="font-weight:600">${r.name || '—'}</td>
+      <td>${r.date}</td>
+      <td>${r.age}</td>
+      <td>${r.gender === 'female' ? '♀' : '♂'}</td>
+      <td style="font-weight:700">${r.bmi}</td>
+      <td style="color:${catColor[r.cat]};font-weight:600">${r.cat}</td>
+      <td><button onclick="deleteRecord(${i})" style="background:rgba(252,79,79,0.15);border:1px solid rgba(252,79,79,0.3);color:#fc4f4f;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;font-family:Inter,sans-serif;">🗑</button></td>
+    </tr>`
+  ).join('');
+}
+
+function deleteRecord(index) {
+  records.splice(index, 1);
+  localStorage.setItem('bmi_records', JSON.stringify(records));
+  renderRecords();
+}
+
+function deleteAllRecords() {
+  if (!confirm('Sare records delete kar dein? Yeh wapas nahi aayenge.')) return;
+  records = [];
+  localStorage.removeItem('bmi_records');
+  renderRecords();
+}
+
+function closeAdmin() {
+  document.getElementById('admin-modal').classList.remove('show');
+}
+document.getElementById('admin-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('admin-modal')) closeAdmin();
+});
+
+/* ===== INIT ===== */
+initGauge();
+</script>
+</body>
+</html>
